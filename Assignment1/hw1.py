@@ -32,14 +32,18 @@ def add_consts():
 
 
 def add_consts_with_placeholder():
-    """ 
+    """
     Construct a TensorFlow graph that constructs 2 constants, 5.1, 1.0 and one
     TensorFlow placeholder of type tf.float32 that accepts a scalar input,
     and adds these three values together, returning as a tuple, and in the
     following order:
     (the resulting tensor, the constructed placeholder).
     """
-
+    c1 = tf.constant(5.1)
+    c2 = tf.constant(1.0)
+    c3 = tf.placeholder(tf.float32)
+    a1 = tf.add(c1, c2)
+    af = tf.add(a1, c3)
     return af, c3
 
 
@@ -48,8 +52,7 @@ def my_relu(in_value):
     Implement a ReLU activation function that takes a scalar tf.placeholder as input
     and returns the appropriate output. For more information see the assignment spec.
     """
-
-    return out_value
+    return tf.maximum(tf.constant(0, dtype=tf.float32),in_value)
 
 
 def my_perceptron(x):
@@ -74,7 +77,15 @@ def my_perceptron(x):
         # tests here
 
     """
+    i = tf.placeholder(tf.float32, shape=(4))
 
+    input = tf.constant(x)
+
+    weights = tf.get_variable("weights", initializer=tf.ones_initializer(), shape=(4), dtype=tf.float32, trainable=True)
+
+    output = tf.tensordot(i,weights,1)
+
+    out = my_relu(output)
     return i, out
 
 
@@ -111,6 +122,17 @@ def onelayer(X, Y, layersize=10):
         batch_xentropy: The cross-entropy loss for each image in the batch
         batch_loss: The average cross-entropy loss of the batch
     """
+
+    w = tf.get_variable("onelayerweights", initializer=tf.zeros_initializer(), shape=[784,layersize])
+    b = tf.get_variable("biases", initializer=tf.zeros_initializer(), shape=[layersize])
+
+    logits = tf.matmul(X,w) + b
+
+    preds = tf.nn.softmax(logits)
+
+    batch_xentropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y, logits=logits)
+
+    batch_loss = tf.reduce_mean(batch_xentropy)
 
     return w, b, logits, preds, batch_xentropy, batch_loss
 
