@@ -122,8 +122,7 @@ def onelayer(X, Y, layersize=10):
         batch_xentropy: The cross-entropy loss for each image in the batch
         batch_loss: The average cross-entropy loss of the batch
     """
-
-    w = tf.get_variable("onelayerweights", initializer=tf.zeros_initializer(), shape=[784,layersize])
+    w = tf.get_variable("onelayerweights", initializer=tf.zeros_initializer(), shape=[784, layersize])
     b = tf.get_variable("biases", initializer=tf.zeros_initializer(), shape=[layersize])
 
     logits = tf.matmul(X,w) + b
@@ -155,6 +154,24 @@ def twolayer(X, Y, hiddensize=30, outputsize=10):
         batch_loss: The average cross-entropy loss of the batch
     """
 
+    w1 = tf.get_variable("first_layer_w", initializer=tf.zeros_initializer(), shape=[784,hiddensize])
+    b1 = tf.get_variable("first_layer_b", initializer=tf.zeros_initializer(), shape=[hiddensize])
+
+    first_layer_out = tf.matmul(X,w1) + b1
+
+    first_layer_act = my_relu(first_layer_out)
+
+    w2 = tf.get_variable("second_layer_w", initializer=tf.zeros_initializer(), shape=[hiddensize, outputsize])
+
+    b2 = tf.get_variable("second_layer_b", initializer=tf.zeros_initializer(), shape=[outputsize])
+
+    logits = tf.matmul(first_layer_act,w2) + b2
+
+    preds = tf.nn.softmax(logits)
+
+    batch_xentropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y, logits=logits)
+
+    batch_loss = tf.reduce_mean(batch_xentropy)
     return w1, b1, w2, b2, logits, preds, batch_xentropy, batch_loss
 
 
@@ -185,6 +202,11 @@ def convnet(X, Y, convlayer_sizes=[10, 10], \
     you should be able to call onelayer() to get the final layer of your network
     """
 
+
+    conv1 = tf.layers.conv2d(X, filter_shape[0], convlayer_sizes[0], padding=padding)
+    conv2 = tf.layers.conv2d(conv1, filter_shape[1], convlayer_sizes[1], padding=padding)
+    flattened_input = tf.reshape(conv2, [-1])
+    w, b, logits, preds, batch_xentropy, batch_loss = onelayer(flattened_input, Y, outputsize)
     return conv1, conv2, w, b, logits, preds, batch_xentropy, batch_loss
 
 
