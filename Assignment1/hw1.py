@@ -13,7 +13,11 @@ you create in part II.
 """
 
 import tensorflow as tf
+import string
+import random
 
+def rand_string(chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(5))
 """ PART I """
 
 
@@ -81,7 +85,11 @@ def my_perceptron(x):
 
     input = tf.constant(x)
 
-    weights = tf.get_variable("weights", initializer=tf.ones_initializer(), shape=(4), dtype=tf.float32, trainable=True)
+    weights = tf.get_variable("weights", \
+            initializer=tf.ones_initializer(), \
+            shape=(4), \
+            dtype=tf.float32, \
+            trainable=True)
 
     output = tf.tensordot(i,weights,1)
 
@@ -105,7 +113,7 @@ def target_placeholder():
 
 
 
-def onelayer(X, Y, layersize=10):
+def onelayer(X, Y, layersize=10, inputsize=784):
     """
     Create a Tensorflow model for logistic regression (i.e. single layer NN)
 
@@ -122,8 +130,14 @@ def onelayer(X, Y, layersize=10):
         batch_xentropy: The cross-entropy loss for each image in the batch
         batch_loss: The average cross-entropy loss of the batch
     """
-    w = tf.get_variable("onelayerweights", initializer=tf.zeros_initializer(), shape=[784, layersize])
-    b = tf.get_variable("biases", initializer=tf.zeros_initializer(), shape=[layersize])
+
+    w = tf.get_variable(rand_string(), \
+                        initializer=tf.random_normal_initializer(), \
+                        shape=[inputsize, layersize])
+
+    b = tf.get_variable(rand_string(), \
+                        initializer=tf.random_normal_initializer(), \
+                        shape=[layersize])
 
     logits = tf.matmul(X,w) + b
 
@@ -153,17 +167,25 @@ def twolayer(X, Y, hiddensize=30, outputsize=10):
         batch_xentropy: The cross-entropy loss for each image in the batch
         batch_loss: The average cross-entropy loss of the batch
     """
+    w1 = tf.get_variable(rand_string(), \
+                        initializer=tf.random_normal_initializer(), \
+                        shape=[784,hiddensize])
 
-    w1 = tf.get_variable("first_layer_w", initializer=tf.zeros_initializer(), shape=[784,hiddensize])
-    b1 = tf.get_variable("first_layer_b", initializer=tf.zeros_initializer(), shape=[hiddensize])
+    b1 = tf.get_variable(rand_string(), \
+                        initializer=tf.random_normal_initializer(), \
+                        shape=[hiddensize])
 
     first_layer_out = tf.matmul(X,w1) + b1
 
-    first_layer_act = my_relu(first_layer_out)
+    first_layer_act = tf.nn.relu(first_layer_out)
 
-    w2 = tf.get_variable("second_layer_w", initializer=tf.zeros_initializer(), shape=[hiddensize, outputsize])
+    w2 = tf.get_variable(rand_string(), \
+                        initializer=tf.random_normal_initializer(), \
+                        shape=[hiddensize, outputsize])
 
-    b2 = tf.get_variable("second_layer_b", initializer=tf.zeros_initializer(), shape=[outputsize])
+    b2 = tf.get_variable(rand_string(), \
+                        initializer=tf.random_normal_initializer(), \
+                        shape=[outputsize])
 
     logits = tf.matmul(first_layer_act,w2) + b2
 
@@ -172,6 +194,7 @@ def twolayer(X, Y, hiddensize=30, outputsize=10):
     batch_xentropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y, logits=logits)
 
     batch_loss = tf.reduce_mean(batch_xentropy)
+
     return w1, b1, w2, b2, logits, preds, batch_xentropy, batch_loss
 
 
@@ -202,11 +225,25 @@ def convnet(X, Y, convlayer_sizes=[10, 10], \
     you should be able to call onelayer() to get the final layer of your network
     """
 
+    conv1 = tf.layers.conv2d(inputs = X, \
+                            filters = convlayer_sizes[0], \
+                            kernel_size = filter_shape[0], \
+                            padding=padding)
 
-    conv1 = tf.layers.conv2d(X, filter_shape[0], convlayer_sizes[0], padding=padding)
-    conv2 = tf.layers.conv2d(conv1, filter_shape[1], convlayer_sizes[1], padding=padding)
-    flattened_input = tf.reshape(conv2, [-1])
-    w, b, logits, preds, batch_xentropy, batch_loss = onelayer(flattened_input, Y, outputsize)
+    conv2 = tf.layers.conv2d(inputs=conv1, \
+                            filters = convlayer_sizes[1], \
+                            kernel_size = filter_shape[0], \
+                            padding=padding)
+
+    flattened_input = tf.contrib.layers.flatten(conv2)
+
+    #Calculate the number of nodes from the layer:
+    # Get the size of the layer (conv_layer_size + 1 - filter_layer_size)^2 apply twice to find the new size of the input.
+
+    # Probs just write this manually;
+
+    w, b, logits, preds, batch_xentropy, batch_loss = onelayer(flattened_input, Y, outputsize, inputsize=7840)
+
     return conv1, conv2, w, b, logits, preds, batch_xentropy, batch_loss
 
 
@@ -233,3 +270,7 @@ def train_step(sess, batch, X, Y, train_op, loss_op, summaries_op):
     train_result, loss, summary = \
         sess.run([train_op, loss_op, summaries_op], feed_dict={X: batch[0], Y: batch[1]})
     return train_result, loss, summary
+
+
+def output_size(convsize, filtersize):
+    return (convsize + 1 - filtersize)**2
