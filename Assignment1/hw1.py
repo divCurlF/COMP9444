@@ -81,13 +81,11 @@ def my_perceptron(x):
         # tests here
 
     """
-    i = tf.placeholder(tf.float32, shape=(4))
-
-    input = tf.constant(x)
+    i = tf.placeholder(tf.float32, shape=(x))
 
     weights = tf.get_variable("weights", \
             initializer=tf.ones_initializer(), \
-            shape=(4), \
+            shape=(x), \
             dtype=tf.float32, \
             trainable=True)
 
@@ -132,7 +130,7 @@ def onelayer(X, Y, layersize=10, inputsize=784):
     """
 
     w = tf.get_variable(rand_string(), \
-                        initializer=tf.random_normal_initializer(), \
+                        initializer=tf.zeros_initializer(), \
                         shape=[inputsize, layersize])
 
     b = tf.get_variable(rand_string(), \
@@ -168,7 +166,7 @@ def twolayer(X, Y, hiddensize=30, outputsize=10):
         batch_loss: The average cross-entropy loss of the batch
     """
     w1 = tf.get_variable(rand_string(), \
-                        initializer=tf.random_normal_initializer(), \
+                        initializer=tf.zeros_initializer(), \
                         shape=[784,hiddensize])
 
     b1 = tf.get_variable(rand_string(), \
@@ -180,7 +178,7 @@ def twolayer(X, Y, hiddensize=30, outputsize=10):
     first_layer_act = tf.nn.relu(first_layer_out)
 
     w2 = tf.get_variable(rand_string(), \
-                        initializer=tf.random_normal_initializer(), \
+                        initializer=tf.zeros_initializer(), \
                         shape=[hiddensize, outputsize])
 
     b2 = tf.get_variable(rand_string(), \
@@ -228,11 +226,13 @@ def convnet(X, Y, convlayer_sizes=[10, 10], \
     conv1 = tf.layers.conv2d(inputs = X, \
                             filters = convlayer_sizes[0], \
                             kernel_size = filter_shape[0], \
+                            activation=tf.nn.relu, \
                             padding=padding)
 
     conv2 = tf.layers.conv2d(inputs=conv1, \
                             filters = convlayer_sizes[1], \
                             kernel_size = filter_shape[0], \
+                            activation = tf.nn.relu, \
                             padding=padding)
 
     flattened_input = tf.contrib.layers.flatten(conv2)
