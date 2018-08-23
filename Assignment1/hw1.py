@@ -242,7 +242,7 @@ def convnet(X, Y, convlayer_sizes=[10, 10],
 
     conv2 = tf.layers.conv2d(inputs=conv1,
                              filters=convlayer_sizes[1],
-                             kernel_size=filter_shape[0],
+                             kernel_size=filter_shape[1],
                              activation=tf.nn.relu,
                              padding=padding)
 
