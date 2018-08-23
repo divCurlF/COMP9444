@@ -16,8 +16,11 @@ import tensorflow as tf
 import string
 import random
 
+
 def rand_string(chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(5))
+
+
 """ PART I """
 
 
@@ -56,7 +59,7 @@ def my_relu(in_value):
     Implement a ReLU activation function that takes a scalar tf.placeholder as input
     and returns the appropriate output. For more information see the assignment spec.
     """
-    return tf.maximum(tf.constant(0, dtype=tf.float32),in_value)
+    return tf.maximum(tf.constant(0, dtype=tf.float32), in_value)
 
 
 def my_perceptron(x):
@@ -83,13 +86,13 @@ def my_perceptron(x):
     """
     i = tf.placeholder(tf.float32, shape=(x))
 
-    weights = tf.get_variable("weights", \
-            initializer=tf.ones_initializer(), \
-            shape=(x), \
-            dtype=tf.float32, \
-            trainable=True)
+    weights = tf.get_variable("weights",
+                              initializer=tf.ones_initializer(),
+                              shape=(x),
+                              dtype=tf.float32,
+                              trainable=True)
 
-    output = tf.tensordot(i,weights,1)
+    output = tf.tensordot(i, weights, 1)
 
     out = my_relu(output)
     return i, out
@@ -129,19 +132,19 @@ def onelayer(X, Y, layersize=10, inputsize=784):
         batch_loss: The average cross-entropy loss of the batch
     """
 
-    w = tf.get_variable(rand_string(), \
-                        initializer=tf.zeros_initializer(), \
+    w = tf.get_variable(rand_string(),
+                        initializer=tf.zeros_initializer(),
                         shape=[inputsize, layersize])
 
-    b = tf.get_variable(rand_string(), \
-                        initializer=tf.random_normal_initializer(), \
+    b = tf.get_variable(rand_string(),
+                        initializer=tf.random_uniform_initializer(minval=-0.01, maxval=0.01),
                         shape=[layersize])
 
-    logits = tf.matmul(X,w) + b
+    logits = tf.matmul(X, w) + b
 
     preds = tf.nn.softmax(logits)
 
-    batch_xentropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y, logits=logits)
+    batch_xentropy = tf.nn.softmax_cross_entropy_with_logits(labels=Y, logits=logits)
 
     batch_loss = tf.reduce_mean(batch_xentropy)
 
@@ -165,38 +168,39 @@ def twolayer(X, Y, hiddensize=30, outputsize=10):
         batch_xentropy: The cross-entropy loss for each image in the batch
         batch_loss: The average cross-entropy loss of the batch
     """
-    w1 = tf.get_variable(rand_string(), \
-                        initializer=tf.zeros_initializer(), \
-                        shape=[784,hiddensize])
+    w1 = tf.get_variable(rand_string(),
+                         initializer=tf.random_uniform_initializer(minval=-0.01, maxval=0.01),
+                         shape=[784, hiddensize])
 
-    b1 = tf.get_variable(rand_string(), \
-                        initializer=tf.random_normal_initializer(), \
-                        shape=[hiddensize])
+    b1 = tf.get_variable(rand_string(),
+                         initializer=tf.random_uniform_initializer(minval=-0.01, maxval=0.01),
+                         shape=[hiddensize])
 
-    first_layer_out = tf.matmul(X,w1) + b1
+    first_layer_out = tf.matmul(X, w1) + b1
 
     first_layer_act = tf.nn.relu(first_layer_out)
 
-    w2 = tf.get_variable(rand_string(), \
-                        initializer=tf.zeros_initializer(), \
-                        shape=[hiddensize, outputsize])
+    w2 = tf.get_variable(rand_string(),
+                         initializer=tf.zeros_initializer(),
+                         shape=[hiddensize, outputsize])
 
-    b2 = tf.get_variable(rand_string(), \
-                        initializer=tf.random_normal_initializer(), \
-                        shape=[outputsize])
+    b2 = tf.get_variable(rand_string(),
+                         initializer=tf.random_normal_initializer(),
+                         shape=[outputsize])
 
-    logits = tf.matmul(first_layer_act,w2) + b2
+    logits = tf.matmul(first_layer_act, w2) + b2
 
     preds = tf.nn.softmax(logits)
 
-    batch_xentropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y, logits=logits)
+    batch_xentropy = tf.nn.softmax_cross_entropy_with_logits(labels=Y,
+                                                             logits=logits)
 
     batch_loss = tf.reduce_mean(batch_xentropy)
 
     return w1, b1, w2, b2, logits, preds, batch_xentropy, batch_loss
 
 
-def convnet(X, Y, convlayer_sizes=[10, 10], \
+def convnet(X, Y, convlayer_sizes=[10, 10],
             filter_shape=[3, 3], outputsize=10, padding="same"):
     """
     Create a Tensorflow model for a Convolutional Neural Network. The network
@@ -223,17 +227,18 @@ def convnet(X, Y, convlayer_sizes=[10, 10], \
     you should be able to call onelayer() to get the final layer of your network
     """
 
-    conv1 = tf.layers.conv2d(inputs = X, \
-                            filters = convlayer_sizes[0], \
-                            kernel_size = filter_shape[0], \
-                            activation=tf.nn.relu, \
-                            padding=padding)
+    conv1 = tf.layers.conv2d(inputs=X,
+                             filters=convlayer_sizes[0],
+                             kernel_size=filter_shape[0],
+                             activation=tf.nn.relu,
+                             padding=padding
+                             )
 
-    conv2 = tf.layers.conv2d(inputs=conv1, \
-                            filters = convlayer_sizes[1], \
-                            kernel_size = filter_shape[0], \
-                            activation = tf.nn.relu, \
-                            padding=padding)
+    conv2 = tf.layers.conv2d(inputs=conv1,
+                             filters=convlayer_sizes[1],
+                             kernel_size=filter_shape[0],
+                             activation=tf.nn.relu,
+                             padding=padding)
 
     flattened_input = tf.contrib.layers.flatten(conv2)
 
