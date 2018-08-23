@@ -115,6 +115,8 @@ def target_placeholder():
 
 
 def onelayer(X, Y, layersize=10, inputsize=784):
+    # Added default parameter to the function to be used for the convolutional
+    # function so I can use varying input sizes.
     """
     Create a Tensorflow model for logistic regression (i.e. single layer NN)
 
@@ -133,7 +135,8 @@ def onelayer(X, Y, layersize=10, inputsize=784):
     """
 
     w = tf.get_variable(rand_string(),
-                        initializer=tf.zeros_initializer(),
+                        initializer=tf.random_uniform_initializer(minval=-0.01, maxval=0.01),
+
                         shape=[inputsize, layersize])
 
     b = tf.get_variable(rand_string(),
@@ -168,6 +171,9 @@ def twolayer(X, Y, hiddensize=30, outputsize=10):
         batch_xentropy: The cross-entropy loss for each image in the batch
         batch_loss: The average cross-entropy loss of the batch
     """
+
+    # Use a small range of uniform random values for better train accuracy.
+
     w1 = tf.get_variable(rand_string(),
                          initializer=tf.random_uniform_initializer(minval=-0.01, maxval=0.01),
                          shape=[784, hiddensize])
@@ -181,11 +187,11 @@ def twolayer(X, Y, hiddensize=30, outputsize=10):
     first_layer_act = tf.nn.relu(first_layer_out)
 
     w2 = tf.get_variable(rand_string(),
-                         initializer=tf.zeros_initializer(),
+                         initializer=tf.random_uniform_initializer(minval=-0.01, maxval=0.01),
                          shape=[hiddensize, outputsize])
 
     b2 = tf.get_variable(rand_string(),
-                         initializer=tf.random_normal_initializer(),
+                         initializer=tf.random_uniform_initializer(minval=-0.01, maxval=0.01),
                          shape=[outputsize])
 
     logits = tf.matmul(first_layer_act, w2) + b2
@@ -201,7 +207,7 @@ def twolayer(X, Y, hiddensize=30, outputsize=10):
 
 
 def convnet(X, Y, convlayer_sizes=[10, 10],
-            filter_shape=[3, 3], outputsize=10, padding="same"):
+            filter_shape=[3, 3], outputsize=10, padding="same", inputsize=784):
     """
     Create a Tensorflow model for a Convolutional Neural Network. The network
     should be of the following structure:
@@ -242,12 +248,14 @@ def convnet(X, Y, convlayer_sizes=[10, 10],
 
     flattened_input = tf.contrib.layers.flatten(conv2)
 
-    #Calculate the number of nodes from the layer:
-    # Get the size of the layer (conv_layer_size + 1 - filter_layer_size)^2 apply twice to find the new size of the input.
+    # Due to zero padding, the convolutional layer will be the same size as the image
+    # So to get the size of the one layer vector we multiply by the number of filters
+    # in the second convolutional layer.
 
-    # Probs just write this manually;
-
-    w, b, logits, preds, batch_xentropy, batch_loss = onelayer(flattened_input, Y, outputsize, inputsize=7840)
+    sz = inputsize*convlayer_sizes[1]
+    
+    # Pass the flattened input into one layer function with default parameter sz.
+    w, b, logits, preds, batch_xentropy, batch_loss = onelayer(flattened_input, Y, outputsize, inputsize=sz)
 
     return conv1, conv2, w, b, logits, preds, batch_xentropy, batch_loss
 
@@ -275,7 +283,3 @@ def train_step(sess, batch, X, Y, train_op, loss_op, summaries_op):
     train_result, loss, summary = \
         sess.run([train_op, loss_op, summaries_op], feed_dict={X: batch[0], Y: batch[1]})
     return train_result, loss, summary
-
-
-def output_size(convsize, filtersize):
-    return (convsize + 1 - filtersize)**2
