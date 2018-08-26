@@ -253,7 +253,7 @@ def convnet(X, Y, convlayer_sizes=[10, 10],
     # in the second convolutional layer.
 
     sz = inputsize*convlayer_sizes[1]
-    
+
     # Pass the flattened input into one layer function with default parameter sz.
     w, b, logits, preds, batch_xentropy, batch_loss = onelayer(flattened_input, Y, outputsize, inputsize=sz)
 
