@@ -3,7 +3,7 @@ import re
 import string
 
 BATCH_SIZE = 128
-MAX_WORDS_IN_REVIEW = 200  # Maximum length of a review to consider
+MAX_WORDS_IN_REVIEW = 150  # Maximum length of a review to consider
 EMBEDDING_SIZE = 50	 # Dimensions for each word vector
 LSTM_SIZE = 128
 FC_UNITS = 256
@@ -12,8 +12,7 @@ NUM_CLASSES = 2
 LEARNING_RATE = 0.001
 
 stop_words = set({'ourselves', 'hers', 'between', 'yourself', 'again',
-                  'there', 'about', 'once', 'during', 'out', 'very', 'having',
-                  'with', 'they', 'own', 'an', 'be', 'some', 'for', 'do',
+                  'there', 'about', 'once', 'during', 'out', 'very', 'having', 'with', 'they', 'own', 'an', 'be', 'some', 'for', 'do',
                   'yours', 'such', 'into', 'of', 'most', 'itself', 'other',
                   'off', 'is', 's', 'am', 'or', 'who', 'as', 'from', 'him',
                   'each', 'the', 'themselves', 'below', 'are', 'we', 'its',
@@ -59,9 +58,9 @@ def preprocess(review):
     """
 
     review = decontracted(review.lower())
-    processed_review = " ".join([word for word in review.lower().translate(
+    processed_review = [word for word in review.lower().translate(
                                             str.maketrans('', '',
-                                            string.punctuation)).split()])
+                                            string.punctuation)).split()]
     return processed_review
 
 
@@ -118,21 +117,25 @@ def define_graph():
                                         dtype=tf.float32
                                         )
 
-    with tf.name_scope("fully_connected"):
-        weights = tf.truncated_normal_initializer(stddev=0.1)
-
-        biases = tf.zeros_initializer()
-
-        preds = tf.contrib.layers.fully_connected(
+    with tf.name_scope("fully_connected_1"):
+        fc1 = tf.contrib.layers.fully_connected(
                 outputs[:, -1],
+                num_outputs=FC_UNITS,
+                activation_fn=tf.nn.softmax,
+                )
+        fc1 = tf.contrib.layers.dropout(fc1, dropout_keep_prob)
+
+    with tf.name_scope("fully_connected_2"):
+        preds = tf.contrib.layers.fully_connected(
+                fc1,
                 num_outputs=2,
                 activation_fn=tf.nn.softmax,
-                weights_initializer=weights,
-                biases_initializer=biases
-                )
+        )
+
         preds = tf.contrib.layers.dropout(preds, dropout_keep_prob)
 
     with tf.name_scope("loss"):
+        loss = tf.get_variable(name="loss", shape=1)
         loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
                                         logits=preds,
                                         labels=labels),
