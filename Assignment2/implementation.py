@@ -80,25 +80,23 @@ def define_graph():
     You must return, in the following order, the placeholders/tensors for;
     RETURNS: input, labels, optimizer, accuracy and loss
     """
-    with tf.name_scope("input_data"):
-        input_data = tf.placeholder(
-                tf.float32,
-                [None, MAX_WORDS_IN_REVIEW, EMBEDDING_SIZE],
-                name="input_data"
-                )
+    input_data = tf.placeholder(
+            tf.float32,
+            [None, MAX_WORDS_IN_REVIEW, EMBEDDING_SIZE],
+            name="input_data"
+            )
 
-        with tf.name_scope("labels"):
-            labels = tf.placeholder(
-                    tf.int32,
-                    [None, NUM_CLASSES],
-                    name="labels")
+    labels = tf.placeholder(
+            tf.int32,
+            [None, NUM_CLASSES],
+            name="labels"
+            )
 
-    with tf.name_scope("dropout_keep_prob"):
-        dropout_keep_prob = tf.placeholder_with_default(
-                0.9,
-                shape=(),
-                name="dropout_keep_prob"
-                )
+    dropout_keep_prob = tf.placeholder_with_default(
+            0.9,
+            shape=(),
+            name="dropout_keep_prob"
+            )
 
     with tf.name_scope("RNN_LAYER"):
             lstm = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE)
@@ -134,21 +132,16 @@ def define_graph():
 
         preds = tf.contrib.layers.dropout(preds, dropout_keep_prob)
 
-    with tf.name_scope("loss"):
-        loss = tf.get_variable(name="loss", shape=1)
-        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
                                         logits=preds,
                                         labels=labels),
-                              name="loss")
+                          name="loss")
 
-    with tf.name_scope("optimizer"):
-        optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
-
-    with tf.name_scope("accuracy"):
-        accuracy = tf.contrib.metrics.accuracy(
+    optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
+    accuracy = tf.get_variable(name="accuracy", shape=1)
+    accuracy = tf.contrib.metrics.accuracy(
                                     tf.cast(tf.round(preds), dtype=tf.int32),
                                     labels,
-                                    name="accuracy"
                                     )
 
     return input_data, labels, dropout_keep_prob, optimizer, accuracy, loss
