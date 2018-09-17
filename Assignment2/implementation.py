@@ -116,14 +116,6 @@ def define_graph():
                                         )
 
     with tf.name_scope("fully_connected_1"):
-        fc1 = tf.contrib.layers.fully_connected(
-                outputs[:, -1],
-                num_outputs=FC_UNITS,
-                activation_fn=tf.nn.softmax,
-                )
-        fc1 = tf.contrib.layers.dropout(fc1, dropout_keep_prob)
-
-    with tf.name_scope("fully_connected_2"):
         preds = tf.contrib.layers.fully_connected(
                 fc1,
                 num_outputs=2,
