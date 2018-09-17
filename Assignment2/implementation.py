@@ -6,27 +6,26 @@ BATCH_SIZE = 128
 MAX_WORDS_IN_REVIEW = 150  # Maximum length of a review to consider
 EMBEDDING_SIZE = 50	 # Dimensions for each word vector
 LSTM_SIZE = 128
-FC_UNITS = 256
 NUM_LAYERS = 2
-NUM_CLASSES = 2
 LEARNING_RATE = 0.001
 
-stop_words = set({'ourselves', 'hers', 'between', 'yourself', 'again',
-                  'there', 'about', 'once', 'during', 'out', 'very', 'having', 'with', 'they', 'own', 'an', 'be', 'some', 'for', 'do',
-                  'yours', 'such', 'into', 'of', 'most', 'itself', 'other',
-                  'off', 'is', 's', 'am', 'or', 'who', 'as', 'from', 'him',
-                  'each', 'the', 'themselves', 'below', 'are', 'we', 'its',
-                  'these', 'your', 'his', 'through', 'don', 'me', 'were',
-                  'her', 'more', 'himself', 'this', 'down', 'should', 'our',
-                  'their', 'while', 'above', 'both', 'up', 'to', 'ours', 'had',
-                  'she', 'all', 'no', 'when', 'at', 'any', 'before', 'them',
-                  'same', 'and', 'been', 'have', 'in', 'will', 'on', 'does',
-                  'yourselves', 'then', 'that', 'because', 'what', 'over',
-                  'why', 'so', 'can', 'did', 'not', 'now', 'under', 'he',
-                  'you', 'herself', 'has', 'just', 'where', 'too', 'only',
-                  'myself', 'which', 'those', 'i', 'after', 'few', 'whom',
-                  't', 'being', 'if', 'theirs', 'my', 'against', 'a', 'by',
-                  'doing', 'it', 'how', 'further', 'was', 'here', 'than'})
+stop_words = {'ourselves', 'hers', 'between', 'yourself', 'again',
+              'there', 'about', 'once', 'during', 'out', 'very', 'having',
+              'with', 'they', 'own', 'an', 'be', 'some', 'for', 'do',
+              'yours', 'such', 'into', 'of', 'most', 'itself', 'other',
+              'off', 'is', 's', 'am', 'or', 'who', 'as', 'from', 'him',
+              'each', 'the', 'themselves', 'below', 'are', 'we', 'its',
+              'these', 'your', 'his', 'through', 'don', 'me', 'were',
+              'her', 'more', 'himself', 'this', 'down', 'should', 'our',
+              'their', 'while', 'above', 'both', 'up', 'to', 'ours', 'had',
+              'she', 'all', 'no', 'when', 'at', 'any', 'before', 'them',
+              'same', 'and', 'been', 'have', 'in', 'will', 'on', 'does',
+              'yourselves', 'then', 'that', 'because', 'what', 'over',
+              'why', 'so', 'can', 'did', 'not', 'now', 'under', 'he',
+              'you', 'herself', 'has', 'just', 'where', 'too', 'only',
+              'myself', 'which', 'those', 'i', 'after', 'few', 'whom',
+              't', 'being', 'if', 'theirs', 'my', 'against', 'a', 'by',
+              'doing', 'it', 'how', 'further', 'was', 'here', 'than'}
 
 
 def decontracted(phrase):
@@ -64,7 +63,15 @@ def preprocess(review):
     return processed_review
 
 
-def define_graph():
+def define_graph(param_list=None):
+    print(param_list[1:])
+    MAX_WORDS_IN_REVIEW = int(param_list[1])
+    BATCH_SIZE = int(param_list[2])
+    EMBEDDING_SIZE = int(param_list[3])
+    LSTM_SIZE = int(param_list[4])
+    NUM_LAYERS = int(param_list[5])
+    LEARNING_RATE = float(param_list[6])
+
     """
     Implement your model here. You will need to define placeholders,
     for the input and labels. Note that the input is not strings of
@@ -88,7 +95,7 @@ def define_graph():
 
     labels = tf.placeholder(
             tf.int32,
-            [None, NUM_CLASSES],
+            [None, 2],
             name="labels"
             )
 
@@ -106,34 +113,40 @@ def define_graph():
                     )
 
     initial_state = drop.zero_state(BATCH_SIZE, tf.float32)
-
-    with tf.name_scope("RNN_DYNAMIC_CELL"):
-        outputs, final_state = tf.nn.dynamic_rnn(
-                                        drop,
-                                        input_data,
-                                        initial_state=initial_state,
-                                        dtype=tf.float32
-                                        )
+    if (NUM_LAYERS == 1):
+        with tf.name_scope("RNN_DYNAMIC_CELL"):
+            outputs, final_state = tf.nn.dynamic_rnn(
+                                            drop,
+                                            input_data,
+                                            initial_state=initial_state,
+                                            dtype=tf.float32
+                                            )
+    else:
+        #TODO: Write code for generalised multi_layer lstm
+        return
 
     with tf.name_scope("fully_connected_1"):
         preds = tf.contrib.layers.fully_connected(
-                fc1,
+                outputs[:, -1],
                 num_outputs=2,
                 activation_fn=tf.nn.softmax,
-        )
-
+                )
         preds = tf.contrib.layers.dropout(preds, dropout_keep_prob)
 
-    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(
                                         logits=preds,
                                         labels=labels),
                           name="loss")
 
     optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
-    accuracy = tf.get_variable(name="accuracy", shape=1)
-    accuracy = tf.contrib.metrics.accuracy(
-                                    tf.cast(tf.round(preds), dtype=tf.int32),
-                                    labels,
-                                    )
+    accuracy = tf.reduce_mean(
+                        tf.cast(
+                            tf.equal(
+                                tf.argmax(preds, 1),
+                                tf.argmax(labels, 1)
+                                    ),
+                            dtype=tf.float32
+                               ),
+                        name="accuracy")
 
     return input_data, labels, dropout_keep_prob, optimizer, accuracy, loss

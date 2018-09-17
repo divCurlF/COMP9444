@@ -27,14 +27,24 @@ from pathlib import Path
 import pickle as pk
 import glob
 
+import sys  # TODO: REMOVE THIS LINE WHEN SUBMITTING
 import implementation as imp
 
-BATCH_SIZE = imp.BATCH_SIZE
-MAX_WORDS_IN_REVIEW = imp.MAX_WORDS_IN_REVIEW  # Maximum length of a review to consider
-EMBEDDING_SIZE = imp.EMBEDDING_SIZE  # Dimensions for each word vector
+# TODO: UNCOMMENT THESE WHEN SUBMITTING
+# BATCH_SIZE = imp.BATCH_SIZE
+# MAX_WORDS_IN_REVIEW = imp.MAX_WORDS_IN_REVIEW  # Maximum length of a review to consider
+# EMBEDDING_SIZE = imp.EMBEDDING_SIZE  # Dimensions for each word vector
+
+# TODO: REMOVE THESE LINES ON SUBMISSION
+
+param_list = [sys.argv[i] for i in range(1, len(sys.argv))]
+
+BATCH_SIZE = int(param_list[2])
+MAX_WORDS_IN_REVIEW = int(param_list[1])
+EMBEDDING_SIZE = int(param_list[3])
 
 SAVE_FREQ = 100
-iterations = 5000
+iterations = int(param_list[7])
 
 checkpoints_dir = "./checkpoints"
 
@@ -144,8 +154,10 @@ def train():
 
     training_data_text = load_data()
     training_data_embedded = embedd_data(training_data_text, glove_array, glove_dict)
+
+    # TODO: REMOVE PARAMETER ARGUMENT WHEN SUBMITTING
     input_data, labels, dropout_keep_prob, optimizer, accuracy, loss = \
-        imp.define_graph()
+        imp.define_graph(param_list)
 
     # tensorboard
     tf.summary.scalar("training_accuracy", accuracy)
@@ -184,6 +196,13 @@ def train():
             print("Saved model to %s" % save_path)
     sess.close()
 
+    # TODO: REMOVE THESE LINES WHEN SUBMITTING
+    print("Outputting to a file...")
+    out_file = open("training_data.txt", "a")
+    out_file_string = "ACC:" + " " + str(accuracy_value) + " " + str(param_list)
+    out_file.write(out_file_string)
+    out_file.close()
+
 
 def eval(data_path):
     glove_array, glove_dict = load_glove_embeddings()
@@ -219,23 +238,29 @@ def eval(data_path):
         total_acc += accuracyV
         print("Accuracy %s, Loss: %s" % (accuracyV, lossV))
     print('-' * 40)
-    print("FINAL ACC:", total_acc / num_batches)
+
+    # TODO: REMOVE THESE LINES WHEN SUBMITTING
+
 
 
 if __name__ == "__main__":
-    import argparse
+    # TODO: UNCOMMENT THESE WHEN SUBMITTING
+    # import argparse
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["train", "eval", "test"])
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("mode", choices=["train", "eval", "test"])
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
+    if (len(sys.argv) != 9):
+        exit()
 
-    if (args.mode == "train"):
+    param_list = [sys.argv[i] for i in range(1, len(sys.argv))]
+    if (sys.argv[1] == "train"):
         print("Training Run")
         train()
-    elif (args.mode == "eval"):
+    elif (sys.argv[1] == "eval"):
         print("Evaluation run")
         eval("./data/validate")
-    elif (args.mode == "test"):
+    elif (sys.argv[1] == "test"):
         print("Test run")
         eval("./data/test")
