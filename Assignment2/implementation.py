@@ -6,7 +6,6 @@ BATCH_SIZE = 128
 MAX_WORDS_IN_REVIEW = 150  # Maximum length of a review to consider
 EMBEDDING_SIZE = 50	 # Dimensions for each word vector
 LSTM_SIZE = 128
-FC_UNITS = 256
 NUM_LAYERS = 2
 NUM_CLASSES = 2
 LEARNING_RATE = 0.001
@@ -116,20 +115,11 @@ def define_graph():
                                         )
 
     with tf.name_scope("fully_connected_1"):
-        fc1 = tf.contrib.layers.fully_connected(
-                outputs[:, -1],
-                num_outputs=FC_UNITS,
-                activation_fn=tf.nn.softmax,
-                )
-        fc1 = tf.contrib.layers.dropout(fc1, dropout_keep_prob)
-
-    with tf.name_scope("fully_connected_2"):
         preds = tf.contrib.layers.fully_connected(
-                fc1,
+                outputs[:, -1],
                 num_outputs=2,
                 activation_fn=tf.nn.softmax,
-        )
-
+                )
         preds = tf.contrib.layers.dropout(preds, dropout_keep_prob)
 
     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
@@ -138,10 +128,14 @@ def define_graph():
                           name="loss")
 
     optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
-    accuracy = tf.get_variable(name="accuracy", shape=1)
-    accuracy = tf.contrib.metrics.accuracy(
-                                    tf.cast(tf.round(preds), dtype=tf.int32),
-                                    labels,
-                                    )
+    accuracy = tf.reduce_mean(
+                        tf.cast(
+                            tf.equal(
+                                tf.argmax(preds, 1),
+                                tf.argmax(labels, 1)
+                                    ),
+                            dtype=tf.float32
+                               ),
+                        name="accuracy")
 
     return input_data, labels, dropout_keep_prob, optimizer, accuracy, loss
