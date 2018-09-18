@@ -59,8 +59,25 @@ def preprocess(review):
     review = decontracted(review.lower())
     processed_review = [word for word in review.lower().translate(
                                             str.maketrans('', '',
-                                            string.punctuation)).split()]
+                                             string.punctuation)).split()]
     return processed_review
+
+def build_lstm_layers(lstm_sizes, embed, keep_prob, batch_size):
+    """
+    Create the LSTM layers
+    """
+    lstms = [tf.contrib.rnn.BasicLSTMCell(size) for size in lstm_sizes]
+    # Add dropout to the cell
+    drops = [tf.contrib.rnn.DropoutWrapper(lstm, output_keep_prob=keep_prob) for lstm in lstms]
+    # Stack up multiple LSTM layers, for deep learning
+    cell = tf.contrib.rnn.MultiRNNCell(drops)
+    # Getting an initial state of all zeros
+    initial_state = cell.zero_state(batch_size, tf.float32)
+
+    lstm_outputs, final_state = tf.nn.dynamic_rnn(cell, embed, initial_state=initial_state)
+
+    return initial_state, lstm_outputs, cell, final_state
+
 
 
 def define_graph(param_list=None):
@@ -105,25 +122,12 @@ def define_graph(param_list=None):
             name="dropout_keep_prob"
             )
 
-    with tf.name_scope("RNN_LAYER"):
-            lstm = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE)
-            drop = tf.contrib.rnn.DropoutWrapper(
-                                    cell=lstm,
-                                    output_keep_prob=dropout_keep_prob,
-                    )
+    initial_state, outputs, cell, final_state = build_lstm_layers(
+                                                        [128, 128],
+                                                        input_data,
+                                                        dropout_keep_prob,
+                                                        BATCH_SIZE)
 
-    initial_state = drop.zero_state(BATCH_SIZE, tf.float32)
-    if (NUM_LAYERS == 1):
-        with tf.name_scope("RNN_DYNAMIC_CELL"):
-            outputs, final_state = tf.nn.dynamic_rnn(
-                                            drop,
-                                            input_data,
-                                            initial_state=initial_state,
-                                            dtype=tf.float32
-                                            )
-    else:
-        #TODO: Write code for generalised multi_layer lstm
-        return
 
     with tf.name_scope("fully_connected_1"):
         preds = tf.contrib.layers.fully_connected(
