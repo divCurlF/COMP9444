@@ -9,23 +9,27 @@ LSTM_SIZE = 128
 NUM_LAYERS = 2
 LEARNING_RATE = 0.001
 
-stop_words = {'ourselves', 'hers', 'between', 'yourself', 'again',
-              'there', 'about', 'once', 'during', 'out', 'very', 'having',
-              'with', 'they', 'own', 'an', 'be', 'some', 'for', 'do',
-              'yours', 'such', 'into', 'of', 'most', 'itself', 'other',
-              'off', 'is', 's', 'am', 'or', 'who', 'as', 'from', 'him',
-              'each', 'the', 'themselves', 'below', 'are', 'we', 'its',
-              'these', 'your', 'his', 'through', 'don', 'me', 'were',
-              'her', 'more', 'himself', 'this', 'down', 'should', 'our',
-              'their', 'while', 'above', 'both', 'up', 'to', 'ours', 'had',
-              'she', 'all', 'no', 'when', 'at', 'any', 'before', 'them',
-              'same', 'and', 'been', 'have', 'in', 'will', 'on', 'does',
-              'yourselves', 'then', 'that', 'because', 'what', 'over',
-              'why', 'so', 'can', 'did', 'not', 'now', 'under', 'he',
-              'you', 'herself', 'has', 'just', 'where', 'too', 'only',
-              'myself', 'which', 'those', 'i', 'after', 'few', 'whom',
-              't', 'being', 'if', 'theirs', 'my', 'against', 'a', 'by',
-              'doing', 'it', 'how', 'further', 'was', 'here', 'than'}
+stop_words = {"i", "me", "my", "myself", "we", "our", "ours",
+              "ourselves", "you", "your", "yours", "yourself",
+              "yourselves", "he", "him", "his", "himself",
+              "she", "her", "hers", "herself", "it", "its",
+              "itself", "they", "them", "their", "theirs",
+              "themselves", "what", "which", "who", "whom",
+              "this", "that", "these", "those", "am", "is",
+              "are", "was", "were", "be", "been", "being",
+              "have", "has", "had", "having", "do", "does",
+              "did", "doing", "a", "an", "the", "and", "but",
+              "if", "or", "because", "as", "until", "while",
+              "of", "at", "by", "for", "with", "about", "against",
+              "between", "into", "through", "during", "before",
+              "after", "above", "below", "to", "from", "up",
+              "down", "in", "out", "on", "off", "over", "under",
+              "again", "further", "then", "once", "here", "there",
+              "when", "where", "why", "how", "all", "any", "both",
+              "each", "few", "more", "most", "other", "some",
+              "such", "no", "nor", "not", "only", "own", "same",
+              "so", "than", "too", "very", "s", "t", "can",
+              "will", "just", "don", "should", "now"}
 
 
 def decontracted(phrase):
@@ -55,11 +59,9 @@ def preprocess(review):
         - word find/replace
     RETURN: the preprocessed review in string form.
     """
-
+    translator = str.maketrans('', '', string.punctuation)
     review = decontracted(review.lower())
-    processed_review = [word for word in review.lower().translate(
-                                            str.maketrans('', '',
-                                             string.punctuation)).split()]
+    processed_review = [word for word in review.lower().replace('-', ' ').replace('/', ' ').translate(translator).split() if word not in stop_words]
     return processed_review
 
 def build_lstm_layers(lstm_sizes, embed, keep_prob, batch_size):
@@ -76,8 +78,7 @@ def build_lstm_layers(lstm_sizes, embed, keep_prob, batch_size):
 
     lstm_outputs, final_state = tf.nn.dynamic_rnn(cell, embed, initial_state=initial_state)
 
-    return initial_state, lstm_outputs, cell, final_state
-
+    return lstm_outputs, final_state
 
 
 def define_graph(param_list=None):
@@ -85,8 +86,8 @@ def define_graph(param_list=None):
     MAX_WORDS_IN_REVIEW = int(param_list[1])
     BATCH_SIZE = int(param_list[2])
     EMBEDDING_SIZE = int(param_list[3])
-    LSTM_SIZE = int(param_list[4])
-    NUM_LAYERS = int(param_list[5])
+    LAYER1_SIZE = int(param_list[4])
+    LAYER2_SIZE = int(param_list[5])
     LEARNING_RATE = float(param_list[6])
 
     """
@@ -117,17 +118,16 @@ def define_graph(param_list=None):
             )
 
     dropout_keep_prob = tf.placeholder_with_default(
-            0.9,
+            1.0,
             shape=(),
             name="dropout_keep_prob"
             )
 
-    initial_state, outputs, cell, final_state = build_lstm_layers(
-                                                        [128, 128],
-                                                        input_data,
-                                                        dropout_keep_prob,
-                                                        BATCH_SIZE)
-
+    outputs, final_state = build_lstm_layers(
+                                       [LAYER1_SIZE, LAYER2_SIZE],
+                                       input_data,
+                                       dropout_keep_prob,
+                                       BATCH_SIZE)
 
     with tf.name_scope("fully_connected_1"):
         preds = tf.contrib.layers.fully_connected(
@@ -135,7 +135,6 @@ def define_graph(param_list=None):
                 num_outputs=2,
                 activation_fn=tf.nn.softmax,
                 )
-        preds = tf.contrib.layers.dropout(preds, dropout_keep_prob)
 
     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(
                                         logits=preds,

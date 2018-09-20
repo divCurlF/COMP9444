@@ -45,6 +45,7 @@ EMBEDDING_SIZE = int(param_list[3])
 
 SAVE_FREQ = 100
 iterations = int(param_list[7])
+dropout_prob = float(param_list[8])
 
 checkpoints_dir = "./checkpoints"
 
@@ -176,8 +177,9 @@ def train():
 
     for i in range(iterations):
         batch_data, batch_labels = getTrainBatch()
+        # TODO: REPLACE DROPOUT_PROB WITH 0.6
         sess.run(optimizer, {input_data: batch_data, labels: batch_labels,
-                             dropout_keep_prob: 0.9})
+                             dropout_keep_prob: dropout_prob})
         if (i % 50 == 0):
             loss_value, accuracy_value, summary = sess.run(
                 [loss, accuracy, summary_op],
@@ -199,7 +201,7 @@ def train():
     # TODO: REMOVE THESE LINES WHEN SUBMITTING
     print("Outputting to a file...")
     out_file = open("training_data.txt", "a")
-    out_file_string = "ACC:" + " " + str(accuracy_value) + " " + str(param_list)
+    out_file_string = "ACC:" + " " + str(accuracy_value) + " " + str(param_list) + "\n"
     out_file.write(out_file_string)
     out_file.close()
 
@@ -239,8 +241,12 @@ def eval(data_path):
         print("Accuracy %s, Loss: %s" % (accuracyV, lossV))
     print('-' * 40)
 
+    print("Outputting to a file...")
+    out_file = open("training_eval_data.txt", "a")
+    out_file_string = "ACC:" + " " + str(accuracyV) + " " + str(param_list) + "\n"
+    out_file.write(out_file_string)
+    out_file.close()
     # TODO: REMOVE THESE LINES WHEN SUBMITTING
-
 
 
 if __name__ == "__main__":
@@ -251,7 +257,7 @@ if __name__ == "__main__":
     # parser.add_argument("mode", choices=["train", "eval", "test"])
 
     # args = parser.parse_args()
-    if (len(sys.argv) != 9):
+    if (len(sys.argv) != 10):
         exit()
 
     param_list = [sys.argv[i] for i in range(1, len(sys.argv))]
