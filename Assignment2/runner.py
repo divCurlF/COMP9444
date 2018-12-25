@@ -27,25 +27,14 @@ from pathlib import Path
 import pickle as pk
 import glob
 
-import sys  # TODO: REMOVE THIS LINE WHEN SUBMITTING
 import implementation as imp
 
-# TODO: UNCOMMENT THESE WHEN SUBMITTING
-# BATCH_SIZE = imp.BATCH_SIZE
-# MAX_WORDS_IN_REVIEW = imp.MAX_WORDS_IN_REVIEW  # Maximum length of a review to consider
-# EMBEDDING_SIZE = imp.EMBEDDING_SIZE  # Dimensions for each word vector
-
-# TODO: REMOVE THESE LINES ON SUBMISSION
-
-param_list = [sys.argv[i] for i in range(1, len(sys.argv))]
-
-BATCH_SIZE = int(param_list[2])
-MAX_WORDS_IN_REVIEW = int(param_list[1])
-EMBEDDING_SIZE = int(param_list[3])
+BATCH_SIZE = imp.BATCH_SIZE
+MAX_WORDS_IN_REVIEW = imp.MAX_WORDS_IN_REVIEW  # Maximum length of a review to consider
+EMBEDDING_SIZE = imp.EMBEDDING_SIZE  # Dimensions for each word vector
 
 SAVE_FREQ = 100
-iterations = int(param_list[7])
-dropout_prob = float(param_list[8])
+iterations = 100000
 
 checkpoints_dir = "./checkpoints"
 
@@ -155,10 +144,8 @@ def train():
 
     training_data_text = load_data()
     training_data_embedded = embedd_data(training_data_text, glove_array, glove_dict)
-
-    # TODO: REMOVE PARAMETER ARGUMENT WHEN SUBMITTING
     input_data, labels, dropout_keep_prob, optimizer, accuracy, loss = \
-        imp.define_graph(param_list)
+        imp.define_graph()
 
     # tensorboard
     tf.summary.scalar("training_accuracy", accuracy)
@@ -177,9 +164,8 @@ def train():
 
     for i in range(iterations):
         batch_data, batch_labels = getTrainBatch()
-        # TODO: REPLACE DROPOUT_PROB WITH 0.6
         sess.run(optimizer, {input_data: batch_data, labels: batch_labels,
-                             dropout_keep_prob: dropout_prob})
+                             dropout_keep_prob: 0.6})
         if (i % 50 == 0):
             loss_value, accuracy_value, summary = sess.run(
                 [loss, accuracy, summary_op],
@@ -197,13 +183,6 @@ def train():
                                        global_step=i)
             print("Saved model to %s" % save_path)
     sess.close()
-
-    # TODO: REMOVE THESE LINES WHEN SUBMITTING
-    print("Outputting to a file...")
-    out_file = open("training_data.txt", "a")
-    out_file_string = "ACC:" + " " + str(accuracy_value) + " " + str(param_list) + "\n"
-    out_file.write(out_file_string)
-    out_file.close()
 
 
 def eval(data_path):
@@ -240,33 +219,23 @@ def eval(data_path):
         total_acc += accuracyV
         print("Accuracy %s, Loss: %s" % (accuracyV, lossV))
     print('-' * 40)
-
-    print("Outputting to a file...")
-    out_file = open("training_eval_data.txt", "a")
-    out_file_string = "ACC:" + " " + str(accuracyV) + " " + str(param_list) + "\n"
-    out_file.write(out_file_string)
-    out_file.close()
-    # TODO: REMOVE THESE LINES WHEN SUBMITTING
+    print("FINAL ACC:", total_acc / num_batches)
 
 
 if __name__ == "__main__":
-    # TODO: UNCOMMENT THESE WHEN SUBMITTING
-    # import argparse
+    import argparse
 
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("mode", choices=["train", "eval", "test"])
+    parser = argparse.ArgumentParser()
+    parser.add_argument("mode", choices=["train", "eval", "test"])
 
-    # args = parser.parse_args()
-    if (len(sys.argv) != 10):
-        exit()
+    args = parser.parse_args()
 
-    param_list = [sys.argv[i] for i in range(1, len(sys.argv))]
-    if (sys.argv[1] == "train"):
+    if (args.mode == "train"):
         print("Training Run")
         train()
-    elif (sys.argv[1] == "eval"):
+    elif (args.mode == "eval"):
         print("Evaluation run")
         eval("./data/validate")
-    elif (sys.argv[1] == "test"):
+    elif (args.mode == "test"):
         print("Test run")
         eval("./data/test")
