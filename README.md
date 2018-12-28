@@ -20,12 +20,25 @@ Overall: 94
 
 ```
 python3.6 -m venv comp9444
-pip install numpy tensorflow
+pip install numpy tensorflow gym
 ```
 
 Assignment 1: Run with `network` as `onelayer`, `twolayer` or `conv`. Name is arbitrary.
 
 `$ (comp9444): python train.py {name} {network}`
 
-Assignment 2:
+Assignment 2: Unzip Assignment2.zip to the directory.
 
+First train the network (use Ctrl-C to stop training at any time.):
+
+`$ (comp9444): python runner.py train`
+
+Then evaluate the network:
+
+`$ (comp9444): python runner.py eval`
+
+Assignment 3:
+
+`$ (comp9444): python Neural_QTrain.py`
+
+-----------------------------------------
