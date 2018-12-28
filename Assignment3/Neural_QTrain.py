@@ -238,8 +238,9 @@ for episode in range(EPISODE):
 
     # Test and view sample runs - can disable render to save time
     # -- DO NOT MODIFY --
-    env.render()
     if (episode % TEST_FREQUENCY == 0 and episode != 0):
+
+        env.render()
         total_reward = 0
         for i in range(TEST):
             state = env.reset()

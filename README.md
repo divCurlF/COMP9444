@@ -21,6 +21,7 @@ Overall: 94
 ```
 python3.6 -m venv comp9444
 pip install numpy tensorflow gym
+source comp9444/bin/activate
 ```
 
 Assignment 1: Run with `network` as `onelayer`, `twolayer` or `conv`. Name is arbitrary.
