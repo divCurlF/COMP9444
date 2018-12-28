@@ -19,8 +19,13 @@ Overall: 94
 ## Best usage:
 
 ```
-python-venv comp9444
+python3.6 -m venv comp9444
 pip install numpy tensorflow
 ```
 
------------------------------------------
+Assignment 1: Run with `network` as `onelayer`, `twolayer` or `conv`. Name is arbitrary.
+
+`$ (comp9444): python train.py {name} {network}`
+
+Assignment 2:
+
